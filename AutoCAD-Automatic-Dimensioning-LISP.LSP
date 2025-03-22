@@ -3,7 +3,7 @@
         space (vlax-get acDoc (if (= (getvar 'cvport) 1) 'paperspace 'modelspace))
         dim (getvar 'dimstyle)
         ht  (* 1.0 (getvar 'dimtxt) (if (= 0 (getvar 'dimanno)) (getvar 'dimscale) (/ 1.0 (getvar 'cannoscalevalue))))
-        )
+  )
 
   (vla-startundomark acDoc)
 
@@ -12,10 +12,10 @@
       msg
       (not (wcmatch (strcase msg) "*CANCEL*,*QUIT*,*BREAK*"))
       (princ (strcat "\nADError: " msg))
-      )
+    )
     (vla-endundomark acDoc)
     (princ)
-    )
+  )
 
   ;; Prompt user for mode selection
   (initget "Original PickPoints")
@@ -29,18 +29,17 @@
                      (cond
                        ((getdictvar "AD_options" a))
                        ((setdictvar "AD_options" a b))
-                       )
                      )
+                   )
                   '("Linear" "Arc")
                   '("b0" "c0")
-                  )
-            )
+      ))
 
       (initget "Options")
       (if
         (eq (getkword "\nPress enter to continue or [Options]: ") "Options")
         (setq opt (AD_options opt))
-        )
+      )
 
       (if
         (setq ss (ssget '((0 . "LWPOLYLINE,LINE,ARC"))))
@@ -51,7 +50,7 @@
                 c (vlax-curve-getendparam   e)
                 b nil
                 isLine (wcmatch (vla-get-Objectname o) "AcDbLine,AcDbArc")
-                )
+          )
           (while (<= (setq b (if isLine (if b (1+ b) c) (1+ a))) c)
             (setq p1 (vlax-curve-getpointatparam e a)
                   p2 (vlax-curve-getpointatparam e b)
@@ -59,7 +58,7 @@
                   pm (vlax-curve-getpointatparam e (/ (+ a b) 2.0))
                   sd (vlax-curve-getsecondderiv  e (/ (+ a b) 2.0))
                   rad (distance '(0 0 0) sd)
-                  d  (cond (isLine) ((not (minusp (vla-getbulge o a)))))
+                  d  (cond (isLine) ((not (minusp (vla-getbulge o a)))) )
                   pc (mapcar (if d '+ '-) pm sd)
                   p3 (if
                        (or (equal rad 0.0 1e-8) (eq (cadr opt) "c2"))
@@ -67,7 +66,7 @@
                          (eq (car opt) "b0")
                          (polar pm (+ (atan (/ (sin u) (cos u))) (/ pi 2.0)) ht)
                          (polar pm (- (atan (/ (sin u) (cos u))) (/ pi 2.0)) (* 1.75 ht))
-                         )
+                       )
                        (if
                          (eq (cadr opt) "c0")
                          (polar pm (angle pm pc) (if (<= 1e-4 (angle pc pm) pi) (* 1.75 ht) ht))
@@ -79,19 +78,23 @@
               (equal rad 0.0 1e-8)
               (vla-adddimaligned space (vlax-3d-point p1) (vlax-3d-point p2) (vlax-3d-point p3))
               (vla-adddimarc space (vlax-3d-point pc) (vlax-3d-point p1) (vlax-3d-point p2) (vlax-3d-point p3))
-              )
-            (setq a (1+ a))
             )
+            (setq a (1+ a))
           )
         )
       )
+    )
 
     ;; Manual point selection mode
     ((equal userChoice "PickPoints")
       (while (setq p1 (getpoint "\nSelect first point (or Enter to stop): "))
-        (setq p2 (getpoint p1 "\nSelect second point: "))
+        (setq p2 (getpoint "\nSelect second point: "))
         (if p2
-          (vla-adddimaligned space (vlax-3d-point p1) (vlax-3d-point p2) (polar p1 (angle p1 p2) ht))
+          (vla-adddimaligned space 
+            (vlax-3d-point (car p1) (cadr p1) (caddr p1)) 
+            (vlax-3d-point (car p2) (cadr p2) (caddr p2)) 
+            (vlax-3d-point (car (polar p1 (angle p1 p2) ht)) (cadr (polar p1 (angle p1 p2) ht)) (caddr (polar p1 (angle p1 p2) ht)))
+          )
         )
       )
     )
@@ -130,9 +133,9 @@
         (set_tile "a2" (setq b2 a2))
         (setq r (start_dialog))
         (unload_dialog dcl_id)
-        )
       )
     )
+  )
   (if (findfile file) (vl-file-delete file))
   (if
     (= r 1)
@@ -144,7 +147,7 @@
     (list a1 a2)
   )
 )
-    
+
 (defun getdictvar (dict var / dict_ename)
   (if
     (setq dict_ename (cdr (assoc -1 (dictsearch (namedobjdict) dict))))
@@ -156,7 +159,7 @@
   (or
     (setq dict_ename (cdr (assoc -1 (dictsearch (namedobjdict) dict))))
     (setq dict_ename (dictadd (namedobjdict) dict (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary")))))
-    )
+  )
   (if
     (setq record (dictsearch dict_ename var))
     (entmod (subst (cons 1 val) (assoc 1 record) record))
