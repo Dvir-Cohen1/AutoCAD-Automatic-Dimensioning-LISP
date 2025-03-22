@@ -87,14 +87,23 @@
 
     ;; Manual point selection mode
     ((equal userChoice "PickPoints")
-      (while (setq p1 (getpoint "\nSelect first point (or Enter to stop): "))
+      (setq pickedPoints '()) ;; Initialize an empty list
+
+      ;; Collect multiple pairs of points
+      (while (setq p1 (getpoint "\nSelect first point (or Enter to finish): "))
         (setq p2 (getpoint "\nSelect second point: "))
         (if p2
-          (vla-adddimaligned space 
-            (vlax-3d-point (car p1) (cadr p1) (caddr p1)) 
-            (vlax-3d-point (car p2) (cadr p2) (caddr p2)) 
-            (vlax-3d-point (car (polar p1 (angle p1 p2) ht)) (cadr (polar p1 (angle p1 p2) ht)) (caddr (polar p1 (angle p1 p2) ht)))
-          )
+          (setq pickedPoints (cons (list p1 p2) pickedPoints)) ;; Store pair
+        )
+      )
+
+      ;; Add dimensions after user presses Enter
+      (foreach pair pickedPoints
+        (setq p1 (car pair) p2 (cadr pair))
+        (vla-adddimaligned space 
+          (vlax-3d-point p1) 
+          (vlax-3d-point p2) 
+          (vlax-3d-point (polar p1 (angle p1 p2) ht))
         )
       )
     )
